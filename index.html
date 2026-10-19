@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Career Coach</title>
+<style>
+  :root {
+    --bg: #faf9f7;
+    --surface: #ffffff;
+    --ink: #1c1b19;
+    --muted: #6b6762;
+    --line: #e3e0da;
+    --accent: #2f5d50;
+    --accent-soft: #eef3f1;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  h2 { font-size: 1.15rem; margin: 28px 0 10px; }
+  .lede { color: var(--muted); margin: 0 0 28px; }
+  label { display: block; font-weight: 600; margin: 18px 0 6px; font-size: .92rem; }
+  input, textarea {
+    width: 100%; padding: 11px 12px; font: inherit; color: inherit;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  }
+  textarea { min-height: 120px; resize: vertical; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button {
+    font: inherit; font-weight: 600; padding: 11px 18px; border-radius: var(--radius);
+    border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button.secondary { background: transparent; color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+  .hidden { display: none; }
+
+  .bar {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); margin-bottom: 18px;
+  }
+  .bar .role { font-weight: 600; }
+  .bar .count { color: var(--muted); font-size: .88rem; }
+
+  .msg { padding: 12px 14px; border-radius: var(--radius); margin-bottom: 12px; }
+  .msg.assistant { background: var(--surface); border: 1px solid var(--line); }
+  .msg.user { background: var(--accent-soft); margin-left: 32px; }
+  .msg .who { font-size: .76rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 4px; }
+
+  .composer { display: flex; gap: 10px; align-items: flex-end; margin-top: 18px; }
+  .composer textarea { min-height: 76px; }
+
+  .status { color: var(--muted); font-style: italic; margin: 12px 0; }
+  .error { color: #8a2b20; background: #fcefed; border: 1px solid #f0d2cd; padding: 10px 12px; border-radius: var(--radius); margin: 12px 0; }
+
+  .score { font-size: 2.6rem; font-weight: 700; line-height: 1; }
+  .score span { font-size: 1rem; font-weight: 400; color: var(--muted); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+  .card .head { display: flex; justify-content: space-between; gap: 12px; font-weight: 600; }
+  .card .pill { background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 1px 10px; font-size: .85rem; white-space: nowrap; }
+  blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid var(--line); color: var(--muted); font-style: italic; }
+  .card p { margin: 8px 0 0; }
+  .label { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HOME -->
+  <section id="home">
+    <h1>Career Coach</h1>
+    <p class="lede">Practise a job interview and get honest, specific feedback.</p>
+
+    <label for="role">What role are you preparing for?</label>
+    <input id="role" placeholder="e.g. Warehouse team leader" autocomplete="off">
+
+    <label for="jd">Job description <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+    <textarea id="jd" placeholder="Paste the job offer here to tailor the interview."></textarea>
+
+    <div class="row">
+      <button id="startBtn" disabled>Practise an interview</button>
+    </div>
+    <p class="status hidden" id="homeStatus">Preparing your interview…</p>
+    <div class="error hidden" id="homeError"></div>
+  </section>
+
+  <!-- INTERVIEW -->
+  <section id="interview" class="hidden">
+    <div class="bar">
+      <span class="role" id="barRole"></span>
+      <span class="count" id="barCount"></span>
+    </div>
+    <div id="messages"></div>
+    <p class="status hidden" id="chatStatus">Thinking…</p>
+    <div class="error hidden" id="chatError"></div>
+    <div class="composer">
+      <textarea id="answer" placeholder="Your answer"></textarea>
+      <button id="sendBtn">Send</button>
+    </div>
+  </section>
+
+  <!-- FEEDBACK -->
+  <section id="feedback" class="hidden">
+    <h1>Your feedback</h1>
+    <p class="score" id="overall"></p>
+    <div id="fbBody"></div>
+    <div class="row">
+      <button class="secondary" id="againBtn">Start again</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const state = { role: "", jd: "", plan: null, history: [] };
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => $(id).classList.remove("hidden");
+const hide = (id) => $(id).classList.add("hidden");
+const screen = (name) => {
+  ["home", "interview", "feedback"].forEach(s => s === name ? show(s) : hide(s));
+  window.scrollTo(0, 0);
+};
+
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text ?? "";
+  return div.innerHTML;
+}
+
+function showError(id, err) {
+  const box = $(id);
+  box.textContent = "Something went wrong: " + err.message + ". Please try again.";
+  box.classList.remove("hidden");
+}
+
+async function api(path, body) {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(res.status + " " + res.statusText);
+  return res.json();
+}
+
+function renderMessages() {
+  $("messages").innerHTML = state.history.map(m => `
+    <div class="msg ${m.role}">
+      <div class="who">${m.role === "assistant" ? "Interviewer" : "You"}</div>
+      <div>${escapeHtml(m.content)}</div>
+    </div>
+  `).join("");
+}
+
+function updateBar(turn) {
+  $("barRole").textContent = state.role;
+  const total = state.plan?.questions?.length ?? 5;
+  $("barCount").textContent = `Question ${turn.question_number} of ${total}`;
+}
+
+// --- home ---
+$("role").addEventListener("input", (e) => {
+  $("startBtn").disabled = e.target.value.trim() === "";
+});
+
+$("startBtn").addEventListener("click", async () => {
+  state.role = $("role").value.trim();
+  state.jd = $("jd").value.trim();
+  $("startBtn").disabled = true;
+  hide("homeError");
+  show("homeStatus");
+  try {
+    const data = await api("/interview/start", { role: state.role, job_description: state.jd });
+    state.plan = data.plan;
+    state.history = [{ role: "assistant", content: data.turn.message }];
+    renderMessages();
+    updateBar(data.turn);
+    screen("interview");
+  } catch (err) {
+    showError("homeError", err);
+  } finally {
+    hide("homeStatus");
+    $("startBtn").disabled = false;
+  }
+});
+
+// --- interview ---
+async function sendAnswer() {
+  const text = $("answer").value.trim();
+  if (!text) return;
+  state.history.push({ role: "user", content: text });
+  $("answer").value = "";
+  renderMessages();
+  $("sendBtn").disabled = true;
+  hide("chatError");
+  show("chatStatus");
+  try {
+    const data = await api("/interview/turn", {
+      role: state.role, plan: state.plan, history: state.history,
+    });
+    state.history.push({ role: "assistant", content: data.turn.message });
+    renderMessages();
+    updateBar(data.turn);
+    if (data.turn.finished || state.history.length > 30) await loadFeedback();
+  } catch (err) {
+    showError("chatError", err);
+  } finally {
+    hide("chatStatus");
+    $("sendBtn").disabled = false;
+  }
+}
+
+$("sendBtn").addEventListener("click", sendAnswer);
+$("answer").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendAnswer();
+});
+
+// --- feedback ---
+async function loadFeedback() {
+  screen("feedback");
+  $("overall").textContent = "";
+  $("fbBody").innerHTML = `<p class="status">Scoring your answers…</p>`;
+  try {
+    const data = await api("/interview/feedback", {
+      role: state.role, plan: state.plan, history: state.history,
+    });
+    const fb = data.feedback;
+    $("overall").innerHTML = `${data.overall} <span>/ 5</span>`;
+
+    const scores = fb.scores.map(s => `
+      <div class="card">
+        <div class="head"><span>${escapeHtml(s.competency)}</span><span class="pill">${s.score} / 5</span></div>
+        ${s.evidence_quote ? `<blockquote>${escapeHtml(s.evidence_quote)}</blockquote>` : ""}
+        <p>${escapeHtml(s.justification)}</p>
+      </div>`).join("");
+
+    const strengths = fb.strengths.map(p => `
+      <div class="card">
+        <div class="head"><span>${escapeHtml(p.point)}</span></div>
+        ${p.quote ? `<blockquote>${escapeHtml(p.quote)}</blockquote>` : ""}
+      </div>`).join("") || `<p class="status">No clear strengths were identified this time.</p>`;
+
+    const weaknesses = fb.weaknesses.map(w => `
+      <div class="card">
+        <div class="head"><span>${escapeHtml(w.point)}</span></div>
+        ${w.quote ? `<blockquote>${escapeHtml(w.quote)}</blockquote>` : ""}
+        <div class="label">How to improve</div>
+        <p>${escapeHtml(w.improvement)}</p>
+        ${w.better_answer_example ? `<div class="label">A stronger answer</div><p>${escapeHtml(w.better_answer_example)}</p>` : ""}
+      </div>`).join("") || `<p class="status">No significant weaknesses were identified.</p>`;
+
+    $("fbBody").innerHTML = `
+      <h2>By competency</h2>${scores}
+      <h2>Strengths</h2>${strengths}
+      <h2>What to work on</h2>${weaknesses}`;
+  } catch (err) {
+    $("fbBody").innerHTML = "";
+    showError("fbBody", err);
+  }
+}
+
+$("againBtn").addEventListener("click", () => {
+  state.plan = null;
+  state.history = [];
+  $("answer").value = "";
+  screen("home");
+});
+</script>
+</body>
+</html>
