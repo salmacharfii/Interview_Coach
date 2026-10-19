@@ -22,6 +22,7 @@ class InterviewPlan(BaseModel):
 
 #Interview_turn
 class InterviewerTurn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     message: str = Field(description="What the interviewer says to the candidate")
     question_number: int = Field(description="Which main question (1-5) this turn belongs to")
     is_follow_up: bool
@@ -30,31 +31,37 @@ class InterviewerTurn(BaseModel):
 
 #Interview_feedback
 class QuestionScore(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     competency: str
     score: int = Field(description="1 to 5, against the plan's anchors")
     evidence_quote: str = Field(description="The candidate's exact words")
     justification: str
 
 class Point(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     point: str
     quote: str = Field(description="The candidate's exact words")
 
 class Weakness(Point):
+    model_config = ConfigDict(extra="forbid")
     improvement: str
     better_answer_example: str
 
 class InterviewFeedback(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     scores: list[QuestionScore]
     strengths: list[Point]
     weaknesses: list[Weakness]
 
 #Review_CV
 class Finding(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     issue: str
     quote: str = Field(description="Exact CV text; empty if something is missing")
     suggestion: str
 
 class CVReview(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     verdict: str = Field(description="Two sentences on how well this CV fits the role")
     content: list[Finding]
     clarity: list[Finding]
