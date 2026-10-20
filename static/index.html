@@ -620,11 +620,10 @@ $("reviewBtn").addEventListener("click", async () => {
   hide("cvError");
   show("cvStatus");
   try {
-    const data = await api("/cv/review", {
-      role: state.role, job_description: state.jd, cv_text: collectText(),
+      const data = await api("/cv/review", {
+      role: state.role, job_description: state.jd,
+      cv_text: collectText(), source: sections ? "pdf" : "paste",
     });
-    renderReview(data.review);
-    screen("cvReview");
   } catch (err) {
     showError("cvError", "Something went wrong: " + err.message);
   } finally {

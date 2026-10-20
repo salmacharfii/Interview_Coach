@@ -11,6 +11,7 @@ import interview
 from schemas import InterviewPlan
 from fastapi import File, HTTPException, UploadFile
 import cv_review
+from typing import Literal
 
 app = FastAPI()
 
@@ -24,6 +25,12 @@ class TurnRequest(BaseModel):
     role: str
     plan: InterviewPlan
     history: list[dict]
+
+class CVRequest(BaseModel):
+    role: str
+    job_description: str = ""
+    cv_text: str
+    source: Literal["paste", "pdf"] = "paste"
 
 logger = logging.getLogger("career_coach")
 
@@ -75,17 +82,12 @@ def feedback(req: TurnRequest):
     overall = round(sum(asked) / len(asked), 1) if asked else None
     return {"overall": overall, "asked": len(asked), "total": len(fb.scores), "feedback": fb}
 
-class CVRequest(BaseModel):
-    role: str
-    job_description: str = ""
-    cv_text: str
-
 
 @app.post("/cv/review")
 def review(req: CVRequest):
     if len(req.cv_text) > 20000:
         raise HTTPException(status_code=400, detail="That CV is too long. Please shorten it.")
-    return {"review": cv_review.review_cv(req.role, req.job_description, req.cv_text)}
+    return {"review": cv_review.review_cv(req.role, req.job_description, req.cv_text, req.source)}
 
 
 @app.post("/cv/extract")

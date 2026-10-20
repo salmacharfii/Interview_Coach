@@ -5,10 +5,11 @@ load_dotenv()
 
 client = OpenAI()
 
-from prompts import CV_REVIEW_PROMPT
+from prompts import CV_REVIEW_PROMPT, PDF_NOTE
 from schemas import CVReview
 
-def review_cv(role: str, job_description: str, cv_text: str) -> CVReview:
+def review_cv(role: str, job_description: str, cv_text: str, source: str = "paste") -> CVReview:
+    instructions = CV_REVIEW_PROMPT + (PDF_NOTE if source == "pdf" else "")
     user_input = (
         f"<role>{role}</role>\n"
         f"<job_description>{job_description or 'Not provided'}</job_description>\n"
@@ -16,7 +17,7 @@ def review_cv(role: str, job_description: str, cv_text: str) -> CVReview:
     )
     response = client.responses.parse(
         model="gpt-6-luna",
-        instructions=CV_REVIEW_PROMPT,
+        instructions=instructions,
         input=user_input,
         text_format=CVReview,
     )
