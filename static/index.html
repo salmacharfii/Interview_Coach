@@ -481,9 +481,12 @@ let sections = null;
 function collectText() {
   if (!sections) return $("cvText").value;
   return Object.keys(SECTION_LABELS)
-    .map(key => {
-      const value = (sections[key] || "").trim();
-      return value ? `${SECTION_LABELS[key].toUpperCase()}\n${value}` : "";
+      .map(key => {
+        const label = SECTION_LABELS[key];
+        const lines = (sections[key] || "").trim().split("\n");
+        if (lines[0].trim().toLowerCase() === label.toLowerCase()) lines.shift();
+        const value = lines.join("\n").trim();
+        return value ? `${label.toUpperCase()}\n${value}` : "";
     })
     .filter(Boolean)
     .join("\n\n");
