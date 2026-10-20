@@ -356,15 +356,22 @@ function updateBar(turn) {
   $("barCount").textContent = `Question ${turn.question_number} of ${total}`;
 }
 
+let sending = false;
+
 async function sendAnswer() {
+  if (sending) return;
   const text = $("answer").value.trim();
   if (!text) return;
+
+  sending = true;
+  $("sendBtn").disabled = true;
+  $("answer").disabled = true;
   state.history.push({ role: "user", content: text });
   $("answer").value = "";
   renderMessages();
-  $("sendBtn").disabled = true;
   hide("chatError");
   show("chatStatus");
+
   try {
     const data = await api("/interview/turn", {
       role: state.role, plan: state.plan, history: state.history,
@@ -374,10 +381,13 @@ async function sendAnswer() {
     updateBar(data.turn);
     if (data.turn.finished || state.history.length > 30) await loadFeedback();
   } catch (err) {
-    showError("chatError", "Something went wrong: " + err.message);
+    showError("chatError", err.message);
   } finally {
+    sending = false;
     hide("chatStatus");
     $("sendBtn").disabled = false;
+    $("answer").disabled = false;
+    $("answer").focus();
   }
 }
 
