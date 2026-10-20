@@ -33,7 +33,8 @@ class InterviewerTurn(BaseModel):
 class QuestionScore(BaseModel):
     model_config = ConfigDict(extra="forbid")
     competency: str
-    score: int = Field(description="1 to 5, against the plan's anchors")
+    asked: bool = Field(description="True only if the interviewer actually asked this question")
+    score: int | None = Field(description="1 to 5 against the plan's anchors; null if not asked")
     evidence_quote: str = Field(description="The candidate's exact words")
     justification: str
 

@@ -72,6 +72,8 @@
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
   .card .head { display: flex; justify-content: space-between; gap: 12px; font-weight: 600; }
   .card .pill { background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 1px 10px; font-size: .85rem; white-space: nowrap; }
+  .card.not-reached { opacity: .6; }
+  .pill.muted { background: var(--line); color: var(--muted); }
   blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid var(--line); color: var(--muted); font-style: italic; }
   .card p { margin: 8px 0 0; }
   .label { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 10px; }
@@ -387,7 +389,12 @@ $("answer").addEventListener("keydown", (e) => {
 // --- interview feedback ---
 async function loadFeedback() {
   screen("feedback");
-  $("overall").textContent = "";
+  $("overall").innerHTML = data.overall === null
+    ? `– <span>no questions answered</span>`
+    : `${data.overall} <span>/ 5</span>`;
+    const partial = data.asked < data.total
+      ? `<p class="note">Based on ${data.asked} of ${data.total} questions. The interview ended before the rest.</p>`
+      : "";
   $("fbBody").innerHTML = `<p class="status">Scoring your answers…</p>`;
   try {
     const data = await api("/interview/feedback", {
@@ -396,11 +403,15 @@ async function loadFeedback() {
     const fb = data.feedback;
     $("overall").innerHTML = `${data.overall} <span>/ 5</span>`;
 
-    const scores = fb.scores.map(s => `
+    const scores = fb.scores.map(s => s.asked ? `
       <div class="card">
         <div class="head"><span>${escapeHtml(s.competency)}</span><span class="pill">${s.score} / 5</span></div>
         ${s.evidence_quote ? `<blockquote>${escapeHtml(s.evidence_quote)}</blockquote>` : ""}
         <p>${escapeHtml(s.justification)}</p>
+      </div>` : `
+      <div class="card not-reached">
+        <div class="head"><span>${escapeHtml(s.competency)}</span><span class="pill muted">Not reached</span></div>
+        <p>The interview ended before this question.</p>
       </div>`).join("");
 
     const strengths = fb.strengths.map(p => `
@@ -419,6 +430,7 @@ async function loadFeedback() {
       </div>`).join("") || `<p class="status">No significant weaknesses were identified.</p>`;
 
     $("fbBody").innerHTML = `
+      ${partial}
       <h2>By competency</h2>${scores}
       <h2>Strengths</h2>${strengths}
       <h2>What to work on</h2>${weaknesses}`;

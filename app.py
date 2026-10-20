@@ -71,8 +71,9 @@ def turn(req: TurnRequest):
 @app.post("/interview/feedback")
 def feedback(req: TurnRequest):
     fb = interview.interview_feedback(req.plan, req.history)
-    overall = round(sum(s.score for s in fb.scores) / len(fb.scores), 1)
-    return {"overall": overall, "feedback": fb}
+    asked = [s.score for s in fb.scores if s.asked and s.score is not None]
+    overall = round(sum(asked) / len(asked), 1) if asked else None
+    return {"overall": overall, "asked": len(asked), "total": len(fb.scores), "feedback": fb}
 
 class CVRequest(BaseModel):
     role: str
