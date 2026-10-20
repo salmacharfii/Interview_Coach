@@ -307,6 +307,10 @@ function readContext() {
   state.jd = $("jd").value.trim();
 }
 
+function setHomeBusy(busy) {
+  ["startBtn", "cvBtn", "role", "jd"].forEach(id => { $(id).disabled = busy; });
+}
+
 // --- home ---
 $("role").addEventListener("input", (e) => {
   const empty = e.target.value.trim() === "";
@@ -316,7 +320,7 @@ $("role").addEventListener("input", (e) => {
 
 $("startBtn").addEventListener("click", async () => {
   readContext();
-  $("startBtn").disabled = true;
+  setHomeBusy(true);
   hide("homeError");
   show("homeStatus");
   try {
@@ -327,10 +331,10 @@ $("startBtn").addEventListener("click", async () => {
     updateBar(data.turn);
     screen("interview");
   } catch (err) {
-    showError("homeError", "Something went wrong: " + err.message);
+    showError("homeError", err.message);
   } finally {
     hide("homeStatus");
-    $("startBtn").disabled = false;
+    setHomeBusy(false);
   }
 });
 
