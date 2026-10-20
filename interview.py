@@ -1,11 +1,11 @@
 from openai import OpenAI
-from schemas import InterviewPlan
-from prompts import PLANNER_PROMPT
-
 from dotenv import load_dotenv
 load_dotenv()
 
 client = OpenAI()
+
+from schemas import InterviewPlan
+from prompts import PLANNER_PROMPT
 
 def plan_interview(role: str, job_description: str) -> InterviewPlan:
     user_input = (
