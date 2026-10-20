@@ -16,3 +16,7 @@ venv/
 
 # OS
 .DS_Store
+
+#Data 
+.pdf
+SalmaCV 2026.pdf
