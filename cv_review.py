@@ -38,7 +38,6 @@ def extract_cv_text(file_bytes: bytes) -> str:
 from prompts import TIDY_CV_PROMPT
 from schemas import CVSections
 
-
 def tidy_cv(cv_text: str) -> CVSections:
     response = client.responses.parse(
         model="gpt-6-luna",

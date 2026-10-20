@@ -4,6 +4,8 @@ from pydantic import BaseModel
 
 import interview
 from schemas import InterviewPlan
+from fastapi import File, HTTPException, UploadFile
+import cv_review
 
 app = FastAPI()
 
@@ -48,11 +50,6 @@ def feedback(req: TurnRequest):
     overall = round(sum(s.score for s in fb.scores) / len(fb.scores), 1)
     return {"overall": overall, "feedback": fb}
 
-
-from fastapi import File, HTTPException, UploadFile
-
-import cv_review
-
 class CVRequest(BaseModel):
     role: str
     job_description: str = ""
@@ -65,13 +62,6 @@ def review(req: CVRequest):
         raise HTTPException(status_code=400, detail="That CV is too long. Please shorten it.")
     return {"review": cv_review.review_cv(req.role, req.job_description, req.cv_text)}
 
-
-@app.post("/cv/extract")
-async def extract(file: UploadFile = File(...)):
-    try:
-        return {"cv_text": cv_review.extract_cv_text(await file.read())}
-    except ValueError as err:
-        raise HTTPException(status_code=400, detail=str(err))
 
 @app.post("/cv/extract")
 async def extract(file: UploadFile = File(...)):
