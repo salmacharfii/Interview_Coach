@@ -13,6 +13,9 @@
     --line: #e3e0da;
     --accent: #2f5d50;
     --accent-soft: #eef3f1;
+    --warn: #8a2b20;
+    --warn-bg: #fcefed;
+    --warn-line: #f0d2cd;
     --radius: 10px;
   }
   * { box-sizing: border-box; }
@@ -27,6 +30,7 @@
   h2 { font-size: 1.15rem; margin: 28px 0 10px; }
   .lede { color: var(--muted); margin: 0 0 28px; }
   label { display: block; font-weight: 600; margin: 18px 0 6px; font-size: .92rem; }
+  .optional { font-weight: 400; color: var(--muted); }
   input, textarea {
     width: 100%; padding: 11px 12px; font: inherit; color: inherit;
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
@@ -58,7 +62,10 @@
   .composer textarea { min-height: 76px; }
 
   .status { color: var(--muted); font-style: italic; margin: 12px 0; }
-  .error { color: #8a2b20; background: #fcefed; border: 1px solid #f0d2cd; padding: 10px 12px; border-radius: var(--radius); margin: 12px 0; }
+  .error { color: var(--warn); background: var(--warn-bg); border: 1px solid var(--warn-line); padding: 10px 12px; border-radius: var(--radius); margin: 12px 0; }
+  .note { color: var(--muted); font-size: .88rem; margin: 8px 0 0; }
+  .counter { color: var(--muted); font-size: .85rem; white-space: nowrap; }
+  .counter.over { color: var(--warn); font-weight: 600; }
 
   .score { font-size: 2.6rem; font-weight: 700; line-height: 1; }
   .score span { font-size: 1rem; font-weight: 400; color: var(--muted); }
@@ -68,6 +75,45 @@
   blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid var(--line); color: var(--muted); font-style: italic; }
   .card p { margin: 8px 0 0; }
   .label { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 10px; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .tag { background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 2px 11px; font-size: .88rem; }
+  .tag.miss { background: var(--warn-bg); color: var(--warn); }
+  ol.steps { margin: 8px 0 0; padding-left: 20px; }
+  ol.steps li { margin-bottom: 6px; }
+  .verdict { background: var(--accent-soft); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; }
+
+  .dropzone {
+    margin-top: 10px; padding: 28px 20px; text-align: center; cursor: pointer;
+    background: var(--surface); border: 1.5px dashed var(--line); border-radius: var(--radius);
+    color: var(--muted); transition: border-color .15s, background .15s;
+  }
+  .dropzone:hover, .dropzone:focus-visible { border-color: var(--accent); background: var(--accent-soft); outline: none; }
+  .dropzone.over { border-color: var(--accent); background: var(--accent-soft); border-style: solid; }
+  .dropzone svg { color: var(--accent); margin-bottom: 6px; }
+  .drop-main { margin: 0; color: var(--ink); font-weight: 600; }
+  .drop-main .link { color: var(--accent); text-decoration: underline; }
+  .drop-sub { margin: 2px 0 0; font-size: .85rem; }
+
+  .file-chip {
+    display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 11px 14px;
+    background: var(--accent-soft); border: 1px solid var(--line); border-radius: var(--radius);
+  }
+  .file-chip svg { color: var(--accent); flex-shrink: 0; }
+  .chip-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .chip-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip-meta { font-size: .82rem; color: var(--muted); }
+  .chip-remove {
+    background: none; border: none; color: var(--muted); font-size: .88rem; font-weight: 600;
+    text-decoration: underline; padding: 4px 6px; cursor: pointer;
+  }
+  .chip-remove:hover { color: var(--warn); }
+
+  .divider { display: flex; align-items: center; gap: 12px; margin: 22px 0 4px; color: var(--muted); font-size: .88rem; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  .text-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .text-head label { margin-bottom: 6px; }
 </style>
 </head>
 <body>
@@ -76,16 +122,17 @@
   <!-- HOME -->
   <section id="home">
     <h1>Career Coach</h1>
-    <p class="lede">Practise a job interview and get honest, specific feedback.</p>
+    <p class="lede">Practise a job interview and get honest, specific feedback on your CV.</p>
 
     <label for="role">What role are you preparing for?</label>
-    <input id="role" placeholder="e.g. Warehouse team leader" autocomplete="off">
+    <input id="role" placeholder="e.g. Junior UX/UI designer" autocomplete="off">
 
-    <label for="jd">Job description <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
-    <textarea id="jd" placeholder="Paste the job offer here to tailor the interview."></textarea>
+    <label for="jd">Job description <span class="optional">(optional)</span></label>
+    <textarea id="jd" placeholder="Paste the job offer here to tailor the interview and the CV review."></textarea>
 
     <div class="row">
       <button id="startBtn" disabled>Practise an interview</button>
+      <button id="cvBtn" class="secondary" disabled>Review my CV</button>
     </div>
     <p class="status hidden" id="homeStatus">Preparing your interview…</p>
     <div class="error hidden" id="homeError"></div>
@@ -112,20 +159,77 @@
     <p class="score" id="overall"></p>
     <div id="fbBody"></div>
     <div class="row">
-      <button class="secondary" id="againBtn">Start again</button>
+      <button class="secondary" id="againBtn">Back to start</button>
+    </div>
+  </section>
+
+  <!-- CV INPUT -->
+  <section id="cvInput" class="hidden">
+    <div class="bar">
+      <span class="role" id="cvBarRole"></span>
+      <span class="count">CV review</span>
+    </div>
+
+    <!-- step 1: get the CV in -->
+    <div id="cvDrop" class="dropzone" tabindex="0" role="button"
+         aria-label="Upload your CV as a PDF, or drag it here">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>
+      </svg>
+      <p class="drop-main">Drop your CV here, or <span class="link">choose a PDF</span></p>
+      <p class="drop-sub">PDF only · up to 5 MB</p>
+      <input type="file" id="cvFile" accept="application/pdf" hidden>
+    </div>
+
+    <div class="file-chip hidden" id="cvChip">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 3v5h5"/><path d="M15 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8z"/>
+      </svg>
+      <span class="chip-text"><strong id="chipName"></strong><span class="chip-meta" id="chipMeta"></span></span>
+      <button type="button" class="chip-remove" id="chipRemove" aria-label="Remove this file">Remove</button>
+    </div>
+
+    <p class="status hidden" id="extractStatus">Reading your PDF…</p>
+    <div class="error hidden" id="cvError"></div>
+
+    <div class="divider" id="cvDivider"><span>or paste it below</span></div>
+
+    <!-- step 2: check the text -->
+    <div class="text-head">
+      <label for="cvText" id="cvTextLabel">Your CV text</label>
+      <span class="counter hidden" id="cvCounter"></span>
+    </div>
+    <p class="note hidden" id="cvExtractNote">Text pulled out of your PDF. Columns and tables can come out in the wrong order, so give it a quick read and fix anything odd before you send it.</p>
+    <textarea id="cvText" style="min-height:240px" placeholder="Paste your CV here."></textarea>
+
+    <div class="row">
+      <button id="reviewBtn" disabled>Review my CV</button>
+      <button class="secondary" id="cvBackBtn">Back</button>
+    </div>
+    <p class="status hidden" id="cvStatus">Reviewing your CV…</p>
+  </section>
+
+  <!-- CV REVIEW -->
+  <section id="cvReview" class="hidden">
+    <h1>CV review</h1>
+    <div id="cvBody"></div>
+    <div class="row">
+      <button class="secondary" id="cvAgainBtn">Back to start</button>
     </div>
   </section>
 
 </div>
 
 <script>
+const MAX_CV = 20000;
 const state = { role: "", jd: "", plan: null, history: [] };
 
 const $ = (id) => document.getElementById(id);
 const show = (id) => $(id).classList.remove("hidden");
 const hide = (id) => $(id).classList.add("hidden");
+const SECTIONS = ["home", "interview", "feedback", "cvInput", "cvReview"];
 const screen = (name) => {
-  ["home", "interview", "feedback"].forEach(s => s === name ? show(s) : hide(s));
+  SECTIONS.forEach(s => s === name ? show(s) : hide(s));
   window.scrollTo(0, 0);
 };
 
@@ -135,9 +239,9 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-function showError(id, err) {
+function showError(id, message) {
   const box = $(id);
-  box.textContent = "Something went wrong: " + err.message + ". Please try again.";
+  box.textContent = message;
   box.classList.remove("hidden");
 }
 
@@ -147,10 +251,56 @@ async function api(path, body) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(res.status + " " + res.statusText);
+  if (!res.ok) {
+    let detail = res.status + " " + res.statusText;
+    try {
+      const data = await res.json();
+      if (data.detail) detail = data.detail;
+    } catch (e) { /* keep the status text */ }
+    throw new Error(detail);
+  }
   return res.json();
 }
 
+function readContext() {
+  state.role = $("role").value.trim();
+  state.jd = $("jd").value.trim();
+}
+
+// --- home ---
+$("role").addEventListener("input", (e) => {
+  const empty = e.target.value.trim() === "";
+  $("startBtn").disabled = empty;
+  $("cvBtn").disabled = empty;
+});
+
+$("startBtn").addEventListener("click", async () => {
+  readContext();
+  $("startBtn").disabled = true;
+  hide("homeError");
+  show("homeStatus");
+  try {
+    const data = await api("/interview/start", { role: state.role, job_description: state.jd });
+    state.plan = data.plan;
+    state.history = [{ role: "assistant", content: data.turn.message }];
+    renderMessages();
+    updateBar(data.turn);
+    screen("interview");
+  } catch (err) {
+    showError("homeError", "Something went wrong: " + err.message);
+  } finally {
+    hide("homeStatus");
+    $("startBtn").disabled = false;
+  }
+});
+
+$("cvBtn").addEventListener("click", () => {
+  readContext();
+  $("cvBarRole").textContent = state.role;
+  screen("cvInput");
+});
+
+// --- interview ---
 function renderMessages() {
   $("messages").innerHTML = state.history.map(m => `
     <div class="msg ${m.role}">
@@ -166,33 +316,6 @@ function updateBar(turn) {
   $("barCount").textContent = `Question ${turn.question_number} of ${total}`;
 }
 
-// --- home ---
-$("role").addEventListener("input", (e) => {
-  $("startBtn").disabled = e.target.value.trim() === "";
-});
-
-$("startBtn").addEventListener("click", async () => {
-  state.role = $("role").value.trim();
-  state.jd = $("jd").value.trim();
-  $("startBtn").disabled = true;
-  hide("homeError");
-  show("homeStatus");
-  try {
-    const data = await api("/interview/start", { role: state.role, job_description: state.jd });
-    state.plan = data.plan;
-    state.history = [{ role: "assistant", content: data.turn.message }];
-    renderMessages();
-    updateBar(data.turn);
-    screen("interview");
-  } catch (err) {
-    showError("homeError", err);
-  } finally {
-    hide("homeStatus");
-    $("startBtn").disabled = false;
-  }
-});
-
-// --- interview ---
 async function sendAnswer() {
   const text = $("answer").value.trim();
   if (!text) return;
@@ -211,7 +334,7 @@ async function sendAnswer() {
     updateBar(data.turn);
     if (data.turn.finished || state.history.length > 30) await loadFeedback();
   } catch (err) {
-    showError("chatError", err);
+    showError("chatError", "Something went wrong: " + err.message);
   } finally {
     hide("chatStatus");
     $("sendBtn").disabled = false;
@@ -223,7 +346,7 @@ $("answer").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendAnswer();
 });
 
-// --- feedback ---
+// --- interview feedback ---
 async function loadFeedback() {
   screen("feedback");
   $("overall").textContent = "";
@@ -263,7 +386,7 @@ async function loadFeedback() {
       <h2>What to work on</h2>${weaknesses}`;
   } catch (err) {
     $("fbBody").innerHTML = "";
-    showError("fbBody", err);
+    showError("fbBody", "Something went wrong: " + err.message);
   }
 }
 
@@ -271,6 +394,163 @@ $("againBtn").addEventListener("click", () => {
   state.plan = null;
   state.history = [];
   $("answer").value = "";
+  screen("home");
+});
+
+// --- CV input ---
+const MAX_PDF_BYTES = 5 * 1024 * 1024;
+
+function updateCounter() {
+  const len = $("cvText").value.length;
+  const counter = $("cvCounter");
+  // Stay quiet until there is something to say.
+  const noisy = len > MAX_CV * 0.8;
+  counter.classList.toggle("hidden", !noisy);
+  counter.classList.toggle("over", len > MAX_CV);
+  if (noisy) {
+    counter.textContent = len > MAX_CV
+      ? `${(len - MAX_CV).toLocaleString()} characters too long`
+      : `${len.toLocaleString()} / ${MAX_CV.toLocaleString()}`;
+  }
+  $("reviewBtn").disabled = len < 50 || len > MAX_CV;
+}
+
+$("cvText").addEventListener("input", () => {
+  updateCounter();
+  // Once they edit by hand it is their text, not the extraction.
+  hide("cvExtractNote");
+});
+
+function clearFile() {
+  $("cvFile").value = "";
+  hide("cvChip");
+  show("cvDrop");
+  hide("cvExtractNote");
+  $("cvTextLabel").textContent = "Your CV text";
+  $("cvDivider").querySelector("span").textContent = "or paste it below";
+}
+
+$("chipRemove").addEventListener("click", () => {
+  clearFile();
+  $("cvText").value = "";
+  updateCounter();
+  $("cvText").focus();
+});
+
+async function handleFile(file) {
+  if (!file) return;
+  hide("cvError");
+  if (file.type !== "application/pdf") {
+    showError("cvError", "That file isn't a PDF. Upload a PDF, or paste your CV as text below.");
+    return;
+  }
+  if (file.size > MAX_PDF_BYTES) {
+    showError("cvError", "That PDF is larger than 5 MB. Try a smaller file, or paste your CV as text below.");
+    return;
+  }
+  hide("cvDrop");
+  show("extractStatus");
+  try {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch("/cv/extract", { method: "POST", body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "We couldn't read that file.");
+
+    $("cvText").value = data.cv_text;
+    $("chipName").textContent = file.name;
+    $("chipMeta").textContent =
+      `${Math.round(file.size / 1024).toLocaleString()} KB · ${data.cv_text.length.toLocaleString()} characters read`;
+    show("cvChip");
+    $("cvTextLabel").textContent = "Check the text we read";
+    $("cvDivider").querySelector("span").textContent = "then check it below";
+    show("cvExtractNote");
+    updateCounter();
+  } catch (err) {
+    showError("cvError", err.message);
+    clearFile();
+  } finally {
+    hide("extractStatus");
+  }
+}
+
+$("cvFile").addEventListener("change", (e) => handleFile(e.target.files[0]));
+
+const drop = $("cvDrop");
+drop.addEventListener("click", () => $("cvFile").click());
+drop.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("cvFile").click(); }
+});
+["dragenter", "dragover"].forEach(evt =>
+  drop.addEventListener(evt, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(evt =>
+  drop.addEventListener(evt, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", (e) => handleFile(e.dataTransfer.files[0]));
+// Dropping anywhere else shouldn't make the browser open the file.
+["dragover", "drop"].forEach(evt =>
+  window.addEventListener(evt, (e) => { if (e.target !== drop && !drop.contains(e.target)) e.preventDefault(); }));
+
+$("cvBackBtn").addEventListener("click", () => screen("home"));
+
+$("reviewBtn").addEventListener("click", async () => {
+  $("reviewBtn").disabled = true;
+  hide("cvError");
+  show("cvStatus");
+  try {
+    const data = await api("/cv/review", {
+      role: state.role, job_description: state.jd, cv_text: $("cvText").value,
+    });
+    renderReview(data.review);
+    screen("cvReview");
+  } catch (err) {
+    showError("cvError", "Something went wrong: " + err.message);
+  } finally {
+    hide("cvStatus");
+    $("reviewBtn").disabled = false;
+  }
+});
+
+// --- CV review ---
+function findings(list) {
+  if (!list || !list.length) return `<p class="status">Nothing to flag here.</p>`;
+  return list.map(f => `
+    <div class="card">
+      <div class="head"><span>${escapeHtml(f.issue)}</span></div>
+      ${f.quote ? `<blockquote>${escapeHtml(f.quote)}</blockquote>` : ""}
+      <p>${escapeHtml(f.suggestion)}</p>
+    </div>`).join("");
+}
+
+function tags(list, cls) {
+  if (!list || !list.length) return `<p class="status">None identified.</p>`;
+  return `<div class="tags">${list.map(s => `<span class="tag ${cls}">${escapeHtml(s)}</span>`).join("")}</div>`;
+}
+
+function renderReview(review) {
+  $("cvBody").innerHTML = `
+    <div class="verdict">${escapeHtml(review.verdict)}</div>
+
+    <h2>Top improvements</h2>
+    <ol class="steps">${(review.top_improvements || []).map(s => `<li>${escapeHtml(s)}</li>`).join("")}</ol>
+
+    <h2>Relevant skills</h2>
+    <div class="label">Shown in your CV</div>
+    ${tags(review.skills_present, "")}
+    <div class="label">Missing or not evidenced</div>
+    ${tags(review.skills_missing, "miss")}
+
+    <h2>Content</h2>${findings(review.content)}
+    <h2>Clarity</h2>${findings(review.clarity)}
+    <h2>Formatting</h2>
+    <p class="note">Judged on the structure of the text only: pasted or extracted text loses fonts, columns and spacing.</p>
+    ${findings(review.formatting)}
+    <h2>Errors</h2>${findings(review.errors)}`;
+}
+
+$("cvAgainBtn").addEventListener("click", () => {
+  $("cvText").value = "";
+  clearFile();
+  updateCounter();
   screen("home");
 });
 </script>
