@@ -25,8 +25,14 @@ def review_cv(role: str, job_description: str, cv_text: str) -> CVReview:
 import pdfplumber
 
 def extract_cv_text(file_bytes: bytes) -> str:
-    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-        pages = [p.extract_text(layout=True) or "" for p in pdf.pages]
+    try:
+        with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+            pages = [p.extract_text(layout=True) or "" for p in pdf.pages]
+    except Exception:
+        raise ValueError(
+            "We couldn't open this file. Make sure it's a PDF that isn't damaged "
+            "or password-protected, or paste your CV as text instead."
+        ) from None
     text = "\n".join(pages).strip()
     if len(text) < 100:
         raise ValueError(

@@ -1,3 +1,8 @@
+import logging
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from openai import OpenAIError
+
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -20,6 +25,25 @@ class TurnRequest(BaseModel):
     plan: InterviewPlan
     history: list[dict]
 
+logger = logging.getLogger("career_coach")
+
+
+@app.exception_handler(OpenAIError)
+async def openai_error(request: Request, exc: OpenAIError):
+    logger.exception("OpenAI call failed on %s", request.url.path)
+    return JSONResponse(
+        status_code=502,
+        content={"detail": "The AI didn't respond this time. Please try again."},
+    )
+
+
+@app.exception_handler(Exception)
+async def unexpected_error(request: Request, exc: Exception):
+    logger.exception("Unexpected error on %s", request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Something went wrong on our side. Please try again."},
+    )
 
 @app.get("/")
 def home():

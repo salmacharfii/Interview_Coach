@@ -275,20 +275,28 @@ function showError(id, message) {
   box.classList.remove("hidden");
 }
 
+async function readError(res) {
+  try {
+    const data = await res.json();
+    if (typeof data.detail === "string") return data.detail;
+  } catch (e) { /* the server didn't send JSON */ }
+  if (res.status === 413) return "That file is too large. Try a PDF under 4 MB, or paste your CV as text.";
+  if (res.status === 422) return "Some of the information sent wasn't valid. Please check it and try again.";
+  return "Something went wrong on our side. Please try again.";
+}
+
 async function api(path, body) {
-  const res = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    let detail = res.status + " " + res.statusText;
-    try {
-      const data = await res.json();
-      if (data.detail) detail = data.detail;
-    } catch (e) { /* keep the status text */ }
-    throw new Error(detail);
+  let res;
+  try {
+    res = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    throw new Error("We couldn't reach the server. Check your connection and try again.");
   }
+  if (!res.ok) throw new Error(await readError(res));
   return res.json();
 }
 
@@ -542,8 +550,8 @@ async function handleFile(file) {
     const form = new FormData();
     form.append("file", file);
     const res = await fetch("/cv/extract", { method: "POST", body: form });
+    if (!res.ok) throw new Error(await readError(res));
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || "We couldn't read that file.");
 
     showSections(data.sections);
     $("cvLostWarn").classList.toggle("hidden", !data.lost_content);
