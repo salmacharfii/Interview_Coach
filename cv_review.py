@@ -34,3 +34,16 @@ def extract_cv_text(file_bytes: bytes) -> str:
             "please paste your CV as text instead."
         )
     return text
+
+from prompts import TIDY_CV_PROMPT
+from schemas import CVSections
+
+
+def tidy_cv(cv_text: str) -> CVSections:
+    response = client.responses.parse(
+        model="gpt-6-luna",
+        instructions=TIDY_CV_PROMPT,
+        input=f"<cv>{cv_text}</cv>",
+        text_format=CVSections,
+    )
+    return response.output_parsed

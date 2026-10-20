@@ -72,3 +72,18 @@ async def extract(file: UploadFile = File(...)):
         return {"cv_text": cv_review.extract_cv_text(await file.read())}
     except ValueError as err:
         raise HTTPException(status_code=400, detail=str(err))
+
+@app.post("/cv/extract")
+async def extract(file: UploadFile = File(...)):
+    try:
+        raw = cv_review.extract_cv_text(await file.read())
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail=str(err))
+
+    sections = cv_review.tidy_cv(raw)
+    kept = sum(len(v) for v in sections.model_dump().values())
+    return {
+        "cv_text": raw,
+        "sections": sections,
+        "lost_content": kept < len(raw.replace(" ", "")) * 0.8,
+    }

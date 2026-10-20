@@ -70,3 +70,13 @@ class CVReview(BaseModel):
     skills_present: list[str]
     skills_missing: list[str]
     top_improvements: list[str] = Field(description="Max 5, most impactful first")
+
+class CVSections(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    contact: str
+    summary: str
+    experience: str
+    education: str
+    skills: str
+    languages: str
+    other: str = Field(description="Anything that fits no other section")
