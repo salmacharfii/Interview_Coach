@@ -154,9 +154,18 @@
   .counter.over { color: var(--pen); font-weight: 600; }
 
   /* ---------- home ---------- */
-  .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 64px; align-items: end; margin: 40px 0 64px; }
-  .hero-note { color: var(--graphite); font-size: var(--t-sm); border-left: 2px solid var(--pen); padding-left: 14px; border-radius: 0; margin: 0; max-width: 36ch; }
-  .hero-note strong { color: var(--ink); font-weight: 600; }
+  /* First screen: one centred column, filling the viewport, so the CTA sits in the optical centre. */
+  .hero {
+    min-height: calc(100svh - 150px); display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 24px 0 40px; margin-bottom: 24px;
+  }
+  .hero .display { font-size: clamp(2.75rem, 7.2vw, 5.5rem); line-height: .96; }
+  .hero .lede { margin: 28px auto 0; max-width: 40ch; text-wrap: balance; }
+  .hero-steps { display: flex; gap: 28px; list-style: none; padding: 0; margin: 64px 0 0; font-size: var(--t-sm); font-weight: 600; color: var(--pencil); }
+  .hero-steps li { display: flex; gap: 7px; }
+  .hero.started { min-height: 0; padding-bottom: 8px; }
+  .hero.started .hero-steps { display: none; }
+  .hero-steps span { font-weight: 500; color: var(--faint); font-variant-numeric: tabular-nums; }
   .stage { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 0 24px; padding: 32px 0; border-top: 1px solid var(--rule); }
   .stage-n { font-size: var(--t-sm); font-weight: 500; color: var(--pencil); font-variant-numeric: tabular-nums; padding-top: 3px; }
   .stage-t { font-size: var(--t-xl); font-weight: 600; letter-spacing: -.03em; margin: 0 0 6px; }
@@ -178,7 +187,7 @@
   .path button { margin-top: auto; align-self: flex-start; }
   #stageChoose, #stageBrief { animation: fadeIn .6s var(--ease-out) both; scroll-margin-top: 80px; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-  .intro-row { display: flex; flex-direction: column; align-items: center; gap: 14px; margin: 8px 0 72px; }
+  .intro-row { display: flex; flex-direction: column; align-items: center; gap: 14px; margin: 40px 0 0; }
   .intro-btn { min-height: 60px; padding: 0 36px; font-size: var(--t-lg); }
   .intro-meta { margin: 0; font-size: var(--t-sm); color: var(--graphite); }
   .privacy { font-size: var(--t-xs); color: var(--graphite); margin: 40px 0 0; }
@@ -334,7 +343,8 @@
 
   /* ---------- small screens ---------- */
   @media (max-width: 860px) {
-    .hero { grid-template-columns: minmax(0, 1fr); gap: 28px; margin-bottom: 48px; }
+    .hero { min-height: calc(100svh - 120px); }
+    .hero-steps { gap: 14px; flex-wrap: wrap; justify-content: center; }
     .brief-grid, .paths { grid-template-columns: minmax(0, 1fr); }
   }
   @media (max-width: 640px) {
@@ -375,20 +385,17 @@
 
   <!-- HOME -->
   <section id="home" class="screen">
-    <div class="hero">
-      <div>
-        <p class="kicker">Interview and CV practice</p>
-        <h1 class="display" tabindex="-1">Rehearse the interview before it <em>counts.</em></h1>
+    <div class="hero" id="hero">
+      <p class="kicker">Interview and CV practice</p>
+      <h1 class="display" tabindex="-1">Rehearse the interview<br>before it <em>counts.</em></h1>
+      <p class="lede">Practise with questions built from the job you want, then get honest notes on every answer and every line of your CV.</p>
+      <div class="intro-row" id="introRow">
+        <button id="introBtn" class="intro-btn">Get ready for your next job <span class="arrow" aria-hidden="true">→</span></button>
+        <p class="intro-meta">About 10 minutes for an interview, 1 minute for a CV</p>
       </div>
-      <div>
-        <p class="lede">Practise with questions built from the job you want, then get honest notes on every answer and every line of your CV.</p>
-        <p class="hero-note" style="margin-top:24px"><strong>How it works.</strong> Tell us the role, choose what to practise, and leave with a short list of what to fix before you apply.</p>
-      </div>
-    </div>
-
-    <div class="intro-row" id="introRow">
-      <button id="introBtn" class="intro-btn">Get ready for your next job <span class="arrow" aria-hidden="true">→</span></button>
-      <p class="intro-meta">About 10 minutes for an interview, 1 minute for a CV</p>
+      <ol class="hero-steps" aria-label="How it works">
+        <li><span>01</span>Brief</li><li><span>02</span>Rehearse</li><li><span>03</span>Debrief</li><li><span>04</span>Next steps</li>
+      </ol>
     </div>
 
     <div class="stage hidden" id="stageBrief">
@@ -718,6 +725,7 @@ $("role").addEventListener("input", (e) => {
 // The home page shows one thing at a time: hero → brief → choose.
 $("introBtn").addEventListener("click", () => {
   hide("introRow");
+  $("hero").classList.add("started");
   show("stageBrief");
   $("stageBrief").scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });
   $("role").focus({ preventScroll: true });
