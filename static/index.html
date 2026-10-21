@@ -161,6 +161,14 @@
   }
   .hero .display { font-size: clamp(2.75rem, 7.2vw, 5.5rem); line-height: .96; }
   .hero .lede { margin: 28px auto 0; max-width: 40ch; text-wrap: balance; }
+  /* the red pen underlines "counts.", drawn in once on load like in the film */
+  .hero .display em { position: relative; display: inline-block; padding-right: .06em; }
+  .hero .display em::after {
+    content: ""; position: absolute; left: 0; right: .06em; bottom: .02em; height: .07em; min-height: 4px;
+    background: var(--pen); border-radius: 0; transform-origin: left; animation: penline .7s var(--ease-out) .45s both;
+  }
+  @keyframes penline { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .intro-btn:not(:disabled):hover { background: var(--pen); border-color: var(--pen); color: #FBFAF6; }
   .hero-steps { display: flex; gap: 28px; list-style: none; padding: 0; margin: 64px 0 0; font-size: var(--t-sm); font-weight: 600; color: var(--pencil); }
   .hero-steps li { display: flex; gap: 7px; }
   .hero.started { min-height: 0; padding-bottom: 8px; }
