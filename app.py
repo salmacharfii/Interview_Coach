@@ -34,6 +34,9 @@ class CVRequest(BaseModel):
 
 logger = logging.getLogger("career_coach")
 
+MAX_PDF_BYTES = 4 * 1024 * 1024  # Vercel rejects request bodies over 4.5 MB
+MAX_CV_CHARS = 20000
+
 
 @app.exception_handler(OpenAIError)
 async def openai_error(request: Request, exc: OpenAIError):
@@ -85,22 +88,33 @@ def feedback(req: TurnRequest):
 
 @app.post("/cv/review")
 def review(req: CVRequest):
-    if len(req.cv_text) > 20000:
+    if len(req.cv_text) > MAX_CV_CHARS:
         raise HTTPException(status_code=400, detail="That CV is too long. Please shorten it.")
     return {"review": cv_review.review_cv(req.role, req.job_description, req.cv_text, req.source)}
 
 
 @app.post("/cv/extract")
 async def extract(file: UploadFile = File(...)):
+    data = await file.read()
+    if len(data) > MAX_PDF_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="That PDF is larger than 4 MB. Try a smaller file, or paste your CV as text instead.",
+        )
     try:
-        raw = cv_review.extract_cv_text(await file.read())
+        raw = cv_review.extract_cv_text(data)
     except ValueError as err:
         raise HTTPException(status_code=400, detail=str(err))
+    if len(raw) > MAX_CV_CHARS:
+        raise HTTPException(
+            status_code=400,
+            detail="This CV is longer than we can review. Paste the most relevant parts as text instead.",
+        )
 
     sections = cv_review.tidy_cv(raw)
-    kept = sum(len(v) for v in sections.model_dump().values())
+    kept = sum(cv_review.non_whitespace_length(v) for v in sections.model_dump().values())
     return {
         "cv_text": raw,
         "sections": sections,
-        "lost_content": kept < len(raw.replace(" ", "")) * 0.8,
+        "lost_content": kept < cv_review.non_whitespace_length(raw) * 0.8,
     }

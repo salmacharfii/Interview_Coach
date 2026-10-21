@@ -44,7 +44,7 @@
   button.secondary { background: transparent; color: var(--accent); }
   button:disabled { opacity: .45; cursor: not-allowed; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
-  .hidden { display: none; }
+  .hidden { display: none !important; } /* must beat rules like .composer { display: flex } */
 
   .bar {
     display: flex; justify-content: space-between; align-items: baseline;
@@ -107,7 +107,7 @@
   .chip-meta { font-size: .82rem; color: var(--muted); }
   .chip-remove {
     background: none; border: none; color: var(--muted); font-size: .88rem; font-weight: 600;
-    text-decoration: underline; padding: 4px 6px; cursor: pointer;
+    text-decoration: underline; padding: 4px 10px; min-height: 44px; cursor: pointer;
   }
   .chip-remove:hover { color: var(--warn); }
 
@@ -140,9 +140,26 @@
   .section > summary.empty { color: var(--muted); font-weight: 400; }
   .section textarea {
     border: none; border-top: 1px solid var(--line); border-radius: 0;
-    min-height: 96px; font-size: .95rem;
+    min-height: 96px; font-size: 1rem; /* 16px: iPhones zoom in on smaller fields */
   }
   .section textarea:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  /* Accessibility helpers */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+  h1[tabindex="-1"]:focus { outline: none; }
+
+  /* Interview: end button and end-of-interview panel */
+  .bar-right { display: flex; align-items: center; gap: 12px; }
+  .bar .end { font-size: .85rem; padding: 6px 12px; min-height: 44px; }
+  .end-panel {
+    background: var(--accent-soft); border-radius: var(--radius);
+    padding: 16px; margin-top: 18px;
+  }
+  .end-panel p { margin: 0; }
+  .end-panel .row { margin-top: 14px; }
 </style>
 </head>
 <body>
@@ -150,7 +167,7 @@
 
   <!-- HOME -->
   <section id="home">
-    <h1>Career Coach</h1>
+    <h1 tabindex="-1">Career Coach</h1>
     <p class="lede">Practise a job interview and get honest, specific feedback on your CV.</p>
 
     <label for="role">What role are you preparing for?</label>
@@ -163,37 +180,49 @@
       <button id="startBtn" disabled>Practise an interview</button>
       <button id="cvBtn" class="secondary" disabled>Review my CV</button>
     </div>
-    <p class="status hidden" id="homeStatus">Preparing your interview…</p>
-    <div class="error hidden" id="homeError"></div>
+    <p class="status hidden" id="homeStatus" role="status"></p>
+    <div class="error hidden" id="homeError" role="alert"></div>
   </section>
 
   <!-- INTERVIEW -->
   <section id="interview" class="hidden">
+    <h1 class="sr-only" tabindex="-1">Mock interview</h1>
     <div class="bar">
       <span class="role" id="barRole"></span>
-      <span class="count" id="barCount"></span>
+      <span class="bar-right">
+        <span class="count" id="barCount"></span>
+        <button type="button" class="secondary end" id="endBtn">End interview</button>
+      </span>
     </div>
-    <div id="messages"></div>
-    <p class="status hidden" id="chatStatus">Thinking…</p>
-    <div class="error hidden" id="chatError"></div>
-    <div class="composer">
-      <textarea id="answer" placeholder="Your answer"></textarea>
+    <div id="messages" aria-live="polite" aria-relevant="additions"></div>
+    <p class="status hidden" id="chatStatus" role="status">The interviewer is thinking…</p>
+    <div class="error hidden" id="chatError" role="alert"></div>
+    <div class="composer" id="composer">
+      <textarea id="answer" placeholder="Your answer" aria-label="Your answer"></textarea>
       <button id="sendBtn">Send</button>
+    </div>
+    <div class="end-panel hidden" id="chatEnd">
+      <p id="chatEndText"></p>
+      <div class="row" id="chatEndActions"></div>
     </div>
   </section>
 
   <!-- FEEDBACK -->
   <section id="feedback" class="hidden">
-    <h1>Your feedback</h1>
+    <h1 tabindex="-1">Your feedback</h1>
     <p class="score" id="overall"></p>
+    <p class="status hidden" id="fbStatus" role="status">Scoring your answers… this takes about 15 seconds.</p>
+    <div class="error hidden" id="fbError" role="alert"></div>
     <div id="fbBody"></div>
     <div class="row">
+      <button class="hidden" id="fbRetryBtn">Try again</button>
       <button class="secondary" id="againBtn">Back to start</button>
     </div>
   </section>
 
   <!-- CV INPUT -->
   <section id="cvInput" class="hidden">
+    <h1 class="sr-only" tabindex="-1">Review your CV</h1>
     <div class="bar">
       <span class="role" id="cvBarRole"></span>
       <span class="count">CV review</span>
@@ -206,8 +235,8 @@
         <path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>
       </svg>
       <p class="drop-main">Drop your CV here, or <span class="link">choose a PDF</span></p>
-      <p class="drop-sub">PDF only · up to 5 MB</p>
-      <input type="file" id="cvFile" accept="application/pdf" hidden>
+      <p class="drop-sub">PDF only · up to 4 MB</p>
+      <input type="file" id="cvFile" accept="application/pdf,.pdf" hidden>
     </div>
 
     <div class="file-chip hidden" id="cvChip">
@@ -218,8 +247,8 @@
       <button type="button" class="chip-remove" id="chipRemove" aria-label="Remove this file">Remove</button>
     </div>
 
-    <p class="status hidden" id="extractStatus">Reading your PDF…</p>
-    <div class="error hidden" id="cvError"></div>
+    <p class="status hidden" id="extractStatus" role="status">Reading your PDF and sorting it into sections… about 10 seconds.</p>
+    <div class="error hidden" id="cvError" role="alert"></div>
 
     <div class="divider" id="cvDivider"><span>or paste it below</span></div>
 
@@ -238,14 +267,15 @@
       <button id="reviewBtn" disabled>Review my CV</button>
       <button class="secondary" id="cvBackBtn">Back</button>
     </div>
-    <p class="status hidden" id="cvStatus">Reviewing your CV…</p>
+    <p class="status hidden" id="cvStatus" role="status"></p>
   </section>
 
   <!-- CV REVIEW -->
   <section id="cvReview" class="hidden">
-    <h1>CV review</h1>
+    <h1 tabindex="-1">CV review</h1>
     <div id="cvBody"></div>
     <div class="row">
+      <button id="cvEditBtn">Edit and review again</button>
       <button class="secondary" id="cvAgainBtn">Back to start</button>
     </div>
   </section>
@@ -254,16 +284,24 @@
 
 <script>
 const MAX_CV = 20000;
+const MAX_MESSAGES = 30;               // safety net: about 15 turns
+const MAX_PDF_BYTES = 4 * 1024 * 1024; // Vercel rejects uploads over 4.5 MB
 const state = { role: "", jd: "", plan: null, history: [] };
 
 const $ = (id) => document.getElementById(id);
 const show = (id) => $(id).classList.remove("hidden");
 const hide = (id) => $(id).classList.add("hidden");
 const SECTIONS = ["home", "interview", "feedback", "cvInput", "cvReview"];
-const screen = (name) => {
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Show one screen and move keyboard focus into it, so keyboard and
+// screen-reader users land on the new screen instead of a hidden button.
+function screen(name, focusId) {
   SECTIONS.forEach(s => s === name ? show(s) : hide(s));
   window.scrollTo(0, 0);
-};
+  const target = focusId ? $(focusId) : $(name).querySelector("h1");
+  if (target) target.focus({ preventScroll: true });
+}
 
 function escapeHtml(text) {
   const div = document.createElement("div");
@@ -273,8 +311,8 @@ function escapeHtml(text) {
 
 function showError(id, message) {
   const box = $(id);
-  box.textContent = message;
   box.classList.remove("hidden");
+  box.textContent = message;   // set after showing, so screen readers announce it
 }
 
 async function readError(res) {
@@ -322,14 +360,16 @@ $("startBtn").addEventListener("click", async () => {
   readContext();
   setHomeBusy(true);
   hide("homeError");
+  $("homeStatus").textContent = `Designing 5 questions for ${state.role}… this takes about 20 seconds.`;
   show("homeStatus");
   try {
     const data = await api("/interview/start", { role: state.role, job_description: state.jd });
+    resetChat();
     state.plan = data.plan;
     state.history = [{ role: "assistant", content: data.turn.message }];
-    renderMessages();
+    screen("interview", "answer");
+    renderMessages();   // after the screen is visible, so the first question is announced
     updateBar(data.turn);
-    screen("interview");
   } catch (err) {
     showError("homeError", err.message);
   } finally {
@@ -345,13 +385,30 @@ $("cvBtn").addEventListener("click", () => {
 });
 
 // --- interview ---
-function renderMessages() {
-  $("messages").innerHTML = state.history.map(m => `
+let sending = false;
+let interviewOver = false;
+
+function messageHtml(m) {
+  return `
     <div class="msg ${m.role}">
       <div class="who">${m.role === "assistant" ? "Interviewer" : "You"}</div>
       <div>${escapeHtml(m.content)}</div>
-    </div>
-  `).join("");
+    </div>`;
+}
+
+// Add only the new messages (or remove ones taken back), so the live region
+// announces each new message once instead of re-reading the whole chat.
+function renderMessages() {
+  const box = $("messages");
+  while (box.children.length > state.history.length) box.lastElementChild.remove();
+  state.history.slice(box.children.length)
+    .forEach(m => box.insertAdjacentHTML("beforeend", messageHtml(m)));
+}
+
+// Keep the newest message and the answer box (or the end panel) in view.
+function followConversation() {
+  const target = $("chatEnd").classList.contains("hidden") ? $("composer") : $("chatEnd");
+  target.scrollIntoView({ block: "end", behavior: reduceMotion ? "auto" : "smooth" });
 }
 
 function updateBar(turn) {
@@ -360,21 +417,35 @@ function updateBar(turn) {
   $("barCount").textContent = `Question ${turn.question_number} of ${total}`;
 }
 
-let sending = false;
+function resetChat() {
+  interviewOver = false;
+  $("messages").innerHTML = "";
+  $("answer").value = "";
+  hide("chatError");
+  hide("chatEnd");
+  show("composer");
+  show("endBtn");
+}
+
+function setChatBusy(busy) {
+  sending = busy;
+  $("sendBtn").disabled = busy;
+  $("answer").disabled = busy;
+  $("endBtn").disabled = busy;
+  busy ? show("chatStatus") : hide("chatStatus");
+}
 
 async function sendAnswer() {
-  if (sending) return;
+  if (sending || interviewOver) return;
   const text = $("answer").value.trim();
   if (!text) return;
 
-  sending = true;
-  $("sendBtn").disabled = true;
-  $("answer").disabled = true;
+  setChatBusy(true);
+  hide("chatError");
   state.history.push({ role: "user", content: text });
   $("answer").value = "";
   renderMessages();
-  hide("chatError");
-  show("chatStatus");
+  followConversation();
 
   try {
     const data = await api("/interview/turn", {
@@ -383,15 +454,18 @@ async function sendAnswer() {
     state.history.push({ role: "assistant", content: data.turn.message });
     renderMessages();
     updateBar(data.turn);
-    if (data.turn.finished || state.history.length > 30) await loadFeedback();
+    if (data.turn.finished) endInterview("done");
+    else if (state.history.length > MAX_MESSAGES) endInterview("limit");
+    followConversation();
   } catch (err) {
-    showError("chatError", err.message);
+    // Take the unanswered message back out and return it to the box, so nothing is lost.
+    if (state.history.at(-1)?.role === "user") state.history.pop();
+    renderMessages();
+    $("answer").value = text;
+    showError("chatError", `${err.message} Your answer is back in the box, so you can send it again.`);
   } finally {
-    sending = false;
-    hide("chatStatus");
-    $("sendBtn").disabled = false;
-    $("answer").disabled = false;
-    $("answer").focus();
+    setChatBusy(false);
+    if (!interviewOver && $("chatEnd").classList.contains("hidden")) $("answer").focus();
   }
 }
 
@@ -400,22 +474,75 @@ $("answer").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendAnswer();
 });
 
+// The panel that replaces the answer box: interview finished, limit reached,
+// or the user asked to end. actions = [{ label, primary, onClick }]
+function showEndPanel(text, actions) {
+  $("chatEndText").textContent = text;
+  const row = $("chatEndActions");
+  row.innerHTML = "";
+  actions.forEach(a => {
+    const btn = document.createElement("button");
+    btn.textContent = a.label;
+    if (!a.primary) btn.className = "secondary";
+    btn.addEventListener("click", a.onClick);
+    row.appendChild(btn);
+  });
+  hide("composer");
+  show("chatEnd");
+  row.firstElementChild.focus({ preventScroll: true });
+  followConversation();
+}
+
+function hideEndPanel() {
+  hide("chatEnd");
+  show("composer");
+  $("answer").focus();
+  followConversation();
+}
+
+function endInterview(reason) {
+  interviewOver = true;
+  hide("endBtn");
+  const text = reason === "limit"
+    ? "We've reached the limit for this session, so the interview stops here. Your feedback covers the questions you reached."
+    : "That's the end of the interview. Your feedback is ready.";
+  showEndPanel(text, [{ label: "See my feedback", primary: true, onClick: loadFeedback }]);
+}
+
+$("endBtn").addEventListener("click", () => {
+  const answered = state.history.some(m => m.role === "user");
+  if (answered) {
+    showEndPanel("End the interview now? Your feedback will cover the questions you've answered so far.", [
+      { label: "End and see feedback", primary: true, onClick: () => { interviewOver = true; loadFeedback(); } },
+      { label: "Keep going", onClick: hideEndPanel },
+    ]);
+  } else {
+    showEndPanel("End the interview? You haven't answered anything yet, so there's nothing to score.", [
+      { label: "Back to start", primary: true, onClick: backToStart },
+      { label: "Keep going", onClick: hideEndPanel },
+    ]);
+  }
+});
+
 // --- interview feedback ---
 async function loadFeedback() {
   screen("feedback");
-  $("overall").innerHTML = data.overall === null
-    ? `– <span>no questions answered</span>`
-    : `${data.overall} <span>/ 5</span>`;
-    const partial = data.asked < data.total
-      ? `<p class="note">Based on ${data.asked} of ${data.total} questions. The interview ended before the rest.</p>`
-      : "";
-  $("fbBody").innerHTML = `<p class="status">Scoring your answers…</p>`;
+  $("overall").textContent = "";
+  $("fbBody").innerHTML = "";
+  hide("fbError");
+  hide("fbRetryBtn");
+  show("fbStatus");
   try {
     const data = await api("/interview/feedback", {
       role: state.role, plan: state.plan, history: state.history,
     });
     const fb = data.feedback;
-    $("overall").innerHTML = `${data.overall} <span>/ 5</span>`;
+    $("overall").innerHTML = data.overall === null
+      ? `– <span>no questions answered</span>`
+      : `${data.overall} <span>/ 5</span>`;
+    const partial = data.asked < data.total
+      ? `<p class="note">Based on ${data.asked} of ${data.total} questions. The interview ended before the rest.</p>`
+      : "";
 
     const scores = fb.scores.map(s => s.asked ? `
       <div class="card">
@@ -449,21 +576,26 @@ async function loadFeedback() {
       <h2>Strengths</h2>${strengths}
       <h2>What to work on</h2>${weaknesses}`;
   } catch (err) {
-    $("fbBody").innerHTML = "";
-    showError("fbBody", "Something went wrong: " + err.message);
+    // The interview is still in memory, so the user can simply try again.
+    showError("fbError", err.message);
+    show("fbRetryBtn");
+  } finally {
+    hide("fbStatus");
   }
 }
 
-$("againBtn").addEventListener("click", () => {
+$("fbRetryBtn").addEventListener("click", loadFeedback);
+
+function backToStart() {
   state.plan = null;
   state.history = [];
-  $("answer").value = "";
+  resetChat();
   screen("home");
-});
+}
+
+$("againBtn").addEventListener("click", backToStart);
 
 // --- CV input ---
-const MAX_PDF_BYTES = 5 * 1024 * 1024;
-
 // Section key -> the heading the user sees. Order is the order of a CV.
 const SECTION_LABELS = {
   contact: "Contact",
@@ -481,12 +613,12 @@ let sections = null;
 function collectText() {
   if (!sections) return $("cvText").value;
   return Object.keys(SECTION_LABELS)
-      .map(key => {
-        const label = SECTION_LABELS[key];
-        const lines = (sections[key] || "").trim().split("\n");
-        if (lines[0].trim().toLowerCase() === label.toLowerCase()) lines.shift();
-        const value = lines.join("\n").trim();
-        return value ? `${label.toUpperCase()}\n${value}` : "";
+    .map(key => {
+      const label = SECTION_LABELS[key];
+      const lines = (sections[key] || "").trim().split("\n");
+      if (lines[0].trim().toLowerCase() === label.toLowerCase()) lines.shift();
+      const value = lines.join("\n").trim();
+      return value ? `${label.toUpperCase()}\n${value}` : "";
     })
     .filter(Boolean)
     .join("\n\n");
@@ -519,7 +651,7 @@ function renderSections() {
           ${label}
           <span class="meta">${lines ? lines + (lines === 1 ? " line" : " lines") : "empty"}</span>
         </summary>
-        <textarea data-section="${key}" placeholder="Nothing here yet — paste anything that belongs in ${label.toLowerCase()}.">${escapeHtml(value)}</textarea>
+        <textarea data-section="${key}" aria-label="${label} section of your CV" placeholder="Nothing here yet — paste anything that belongs in ${label.toLowerCase()}.">${escapeHtml(value)}</textarea>
       </details>`;
   }).join("");
 
@@ -555,6 +687,16 @@ function clearFile() {
   $("cvDivider").querySelector("span").textContent = "or paste it below";
 }
 
+// Lock the CV screen while a request runs, so nothing changes underneath it.
+function setCvBusy(busy) {
+  ["cvBackBtn", "chipRemove", "cvText"].forEach(id => { $(id).disabled = busy; });
+  $("cvSections").querySelectorAll("textarea").forEach(box => { box.disabled = busy; });
+  $("cvDrop").style.pointerEvents = busy ? "none" : "";
+  $("cvDrop").setAttribute("aria-disabled", busy);
+  if (busy) $("reviewBtn").disabled = true;
+  else updateCounter();
+}
+
 $("chipRemove").addEventListener("click", () => {
   clearFile();
   $("cvText").value = "";
@@ -565,20 +707,28 @@ $("chipRemove").addEventListener("click", () => {
 async function handleFile(file) {
   if (!file) return;
   hide("cvError");
-  if (file.type !== "application/pdf") {
-    showError("cvError", "That file isn't a PDF. Upload a PDF, or paste your CV as text below.");
+  // Some systems send PDFs with no file type, so accept a .pdf name too.
+  const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+  if (!isPdf) {
+    showError("cvError", "That file isn't a PDF. Save it as a PDF first, or paste your CV as text below.");
     return;
   }
   if (file.size > MAX_PDF_BYTES) {
-    showError("cvError", "That PDF is larger than 5 MB. Try a smaller file, or paste your CV as text below.");
+    showError("cvError", "That PDF is larger than 4 MB. Try a smaller file, or paste your CV as text below.");
     return;
   }
   hide("cvDrop");
   show("extractStatus");
+  setCvBusy(true);
   try {
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch("/cv/extract", { method: "POST", body: form });
+    let res;
+    try {
+      res = await fetch("/cv/extract", { method: "POST", body: form });
+    } catch (e) {
+      throw new Error("We couldn't reach the server. Check your connection and try again.");
+    }
     if (!res.ok) throw new Error(await readError(res));
     const data = await res.json();
 
@@ -588,12 +738,12 @@ async function handleFile(file) {
     $("chipMeta").textContent =
       `${Math.round(file.size / 1024).toLocaleString()} KB · sorted into sections`;
     show("cvChip");
-    updateCounter();
   } catch (err) {
     showError("cvError", err.message);
     clearFile();
   } finally {
     hide("extractStatus");
+    setCvBusy(false);
   }
 }
 
@@ -609,26 +759,29 @@ drop.addEventListener("keydown", (e) => {
 ["dragleave", "drop"].forEach(evt =>
   drop.addEventListener(evt, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
 drop.addEventListener("drop", (e) => handleFile(e.dataTransfer.files[0]));
-// Dropping anywhere else shouldn't make the browser open the file.
+// Dropping a file anywhere else shouldn't make the browser open it.
 ["dragover", "drop"].forEach(evt =>
   window.addEventListener(evt, (e) => { if (e.target !== drop && !drop.contains(e.target)) e.preventDefault(); }));
 
 $("cvBackBtn").addEventListener("click", () => screen("home"));
 
 $("reviewBtn").addEventListener("click", async () => {
-  $("reviewBtn").disabled = true;
   hide("cvError");
+  $("cvStatus").textContent = `Reviewing your CV for ${state.role}… this takes about 20 seconds.`;
   show("cvStatus");
+  setCvBusy(true);
   try {
-      const data = await api("/cv/review", {
+    const data = await api("/cv/review", {
       role: state.role, job_description: state.jd,
       cv_text: collectText(), source: sections ? "pdf" : "paste",
     });
+    renderReview(data.review);
+    screen("cvReview");
   } catch (err) {
-    showError("cvError", "Something went wrong: " + err.message);
+    showError("cvError", err.message);
   } finally {
     hide("cvStatus");
-    $("reviewBtn").disabled = false;
+    setCvBusy(false);
   }
 });
 
@@ -668,6 +821,9 @@ function renderReview(review) {
     ${findings(review.formatting)}
     <h2>Errors</h2>${findings(review.errors)}`;
 }
+
+// Go back to the CV with everything still in place, so the user can fix and re-check.
+$("cvEditBtn").addEventListener("click", () => screen("cvInput"));
 
 $("cvAgainBtn").addEventListener("click", () => {
   $("cvText").value = "";

@@ -1,4 +1,5 @@
 import io
+import re
 from openai import OpenAI
 from dotenv import load_dotenv
 load_dotenv()
@@ -25,6 +26,25 @@ def review_cv(role: str, job_description: str, cv_text: str, source: str = "past
 
 import pdfplumber
 
+
+def compact_whitespace(text: str) -> str:
+    """Shrink the padding that layout extraction adds. Indentation is kept in
+    proportion (a quarter of the width) and gaps inside a line become 3 spaces,
+    so the tidy step can still tell the columns apart."""
+    lines = []
+    for line in text.splitlines():
+        body = line.lstrip(" ")
+        if not body.strip():
+            lines.append("")
+            continue
+        indent = " " * ((len(line) - len(body)) // 4)
+        lines.append(indent + re.sub(r" {3,}", "   ", body).rstrip())
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip("\n")
+
+
+def non_whitespace_length(text: str) -> int:
+    return len(re.sub(r"\s", "", text))
+
 def extract_cv_text(file_bytes: bytes) -> str:
     try:
         with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
@@ -34,7 +54,7 @@ def extract_cv_text(file_bytes: bytes) -> str:
             "We couldn't open this file. Make sure it's a PDF that isn't damaged "
             "or password-protected, or paste your CV as text instead."
         ) from None
-    text = "\n".join(pages).strip()
+    text = compact_whitespace("\n".join(pages))
     if len(text) < 100:
         raise ValueError(
             "We couldn't read text from this PDF. If it's a scanned document, "
