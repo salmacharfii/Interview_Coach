@@ -176,6 +176,7 @@
   .path li { padding: 7px 0; border-top: 1px solid var(--rule); display: flex; gap: 10px; }
   .path li::before { content: "—"; color: var(--pen); }
   .path button { margin-top: auto; align-self: flex-start; }
+  #stageChoose { animation: enter .5s var(--ease-out) both; scroll-margin-top: 80px; }
   .privacy { font-size: var(--t-xs); color: var(--graphite); margin: 40px 0 0; }
 
   /* ---------- interview ---------- */
@@ -390,21 +391,24 @@
           <div>
             <label for="role">Role you're preparing for</label>
             <input id="role" placeholder="Junior UX/UI designer" autocomplete="off" maxlength="100">
-            <p class="hint" id="roleHint">Start here. Both options below unlock once you add a role.</p>
+            <p class="hint" id="roleHint">Start here. Add the role, then continue.</p>
           </div>
           <div>
             <label for="jd">Job description <span class="optional">(optional)</span></label>
             <textarea id="jd" placeholder="Paste the job offer. Questions, CV notes and the job-fit check will follow it."></textarea>
           </div>
         </div>
+        <div class="row" id="briefRow">
+          <button id="briefNext" disabled>Continue <span class="arrow" aria-hidden="true">→</span></button>
+        </div>
       </div>
     </div>
 
-    <div class="stage">
+    <div class="stage hidden" id="stageChoose">
       <span class="stage-n">02</span>
       <div>
         <p class="stage-t">Choose what to practise</p>
-        <p class="sub">You can do both. Your brief stays in place when you come back.</p>
+        <p class="sub">Practising for <strong id="chooseRole"></strong>. You can do both; your brief stays in place when you come back.</p>
         <div class="paths">
           <div class="path">
             <div class="path-head"><h3>Mock interview</h3><span class="meta">About 10 min</span></div>
@@ -669,7 +673,7 @@ function readContext() {
 }
 
 function setHomeBusy(busy) {
-  ["startBtn", "cvBtn", "role", "jd"].forEach(id => { $(id).disabled = busy; });
+  ["startBtn", "cvBtn", "briefNext", "role", "jd"].forEach(id => { $(id).disabled = busy; });
 }
 
 // ---------- copy and download ----------
@@ -695,10 +699,24 @@ $("role").addEventListener("input", (e) => {
   const empty = e.target.value.trim() === "";
   $("startBtn").disabled = empty;
   $("cvBtn").disabled = empty;
+  $("briefNext").disabled = empty;
+  $("chooseRole").textContent = e.target.value.trim();
   $("roleHint").textContent = empty
-    ? "Start here. Both options below unlock once you add a role."
-    : "Good. Now choose what to practise below.";
+    ? "Start here. Add the role, then continue."
+    : "Add the job description if you have it, then continue.";
 });
+
+// Step 2 appears only once the brief has a role, so the home page shows one thing at a time.
+function revealChoose() {
+  if (!$("role").value.trim()) return;
+  const first = $("stageChoose").classList.contains("hidden");
+  show("stageChoose");
+  hide("briefRow");
+  if (first) $("stageChoose").scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });
+  $("startBtn").focus({ preventScroll: true });
+}
+$("briefNext").addEventListener("click", revealChoose);
+$("role").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); revealChoose(); } });
 
 $("startBtn").addEventListener("click", async () => {
   readContext();
