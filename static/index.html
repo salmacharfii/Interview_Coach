@@ -161,6 +161,10 @@
   }
   .end-panel p { margin: 0; }
   .end-panel .row { margin-top: 14px; }
+    .score-big { font-size: 2.5rem; font-weight: 700; color: var(--accent); margin: 8px 0; }
+  .status-met { color: var(--accent); border-color: var(--accent); }
+  .status-partly { color: #7a5a00; border-color: #c9a227; }
+  .status-missing { color: var(--warn); border-color: var(--warn-line); }
 </style>
 </head>
 <body>
@@ -275,6 +279,13 @@
   <section id="cvReview" class="hidden">
     <h1 tabindex="-1">CV review</h1>
     <div id="cvBody"></div>
+    <div id="fitArea" class="hidden">
+      <h2>Fit for this job</h2>
+      <button id="fitBtn">Check fit for this job</button>
+      <p class="status hidden" id="fitStatus" role="status"></p>
+      <div class="error hidden" id="fitError" role="alert"></div>
+    <div id="fitBody"></div>
+    </div>
     <div class="row">
       <button id="cvEditBtn">Edit and review again</button>
       <button class="secondary" id="cvAgainBtn">Back to start</button>
@@ -287,7 +298,7 @@
 const MAX_CV = 20000;
 const MAX_MESSAGES = 30;               // safety net: about 15 turns
 const MAX_PDF_BYTES = 4 * 1024 * 1024; // Vercel rejects uploads over 4.5 MB
-const state = { role: "", jd: "", plan: null, history: [] };
+const state = { role: "", jd: "", plan: null, history: [], fit: null };
 
 const $ = (id) => document.getElementById(id);
 const show = (id) => $(id).classList.remove("hidden");
@@ -777,6 +788,7 @@ $("reviewBtn").addEventListener("click", async () => {
       cv_text: collectText(), source: sections ? "pdf" : "paste",
     });
     renderReview(data.review);
+    resetFit();
     screen("cvReview");
   } catch (err) {
     showError("cvError", err.message);
@@ -836,6 +848,47 @@ $("cvAgainBtn").addEventListener("click", () => {
   clearFile();
   updateCounter();
   screen("home");
+});
+// --- Bonus 1: job fit ---
+const STATUS_LABEL = { met: "Met", partly: "Partly", missing: "Missing" };
+
+// Call this right after renderReview(): the button only makes sense with a job description.
+function resetFit() {
+  $("fitBody").innerHTML = "";
+  hide("fitError");
+  show("fitBtn");
+  state.jd ? show("fitArea") : hide("fitArea");
+}
+
+function renderFit(data) {
+  const rows = data.fit.requirements.map(r => `
+    <div class="card">
+      <div class="head"><span>${escapeHtml(r.requirement)}</span><span class="pill status-${r.status}">${STATUS_LABEL[r.status]}</span></div>
+      ${r.evidence ? `<blockquote>${escapeHtml(r.evidence)}</blockquote>` : ""}
+      ${r.how_to_close ? `<p>${escapeHtml(r.how_to_close)}</p>` : ""}
+    </div>`).join("");
+  $("fitBody").innerHTML = `
+    <div class="score-big">${data.match_score}<span> / 100</span></div>
+    <p>${escapeHtml(data.fit.summary)}</p>
+    ${rows}`;
+}
+
+$("fitBtn").addEventListener("click", async () => {
+  hide("fitError");
+  $("fitStatus").textContent = "Comparing your CV with the job description… about 15 seconds.";
+  show("fitStatus");
+  $("fitBtn").disabled = true;
+  try {
+    const data = await api("/cv/fit", { job_description: state.jd, cv_text: collectText() });
+    state.fit = data.fit;              // bonus 3 reuses the gaps
+    renderFit(data);
+    hide("fitBtn");
+  } catch (err) {
+    showError("fitError", err.message);
+  } finally {
+    hide("fitStatus");
+    $("fitBtn").disabled = false;
+  }
 });
 </script>
 </body>

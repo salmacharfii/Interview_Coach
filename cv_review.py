@@ -73,3 +73,24 @@ def tidy_cv(cv_text: str) -> CVSections:
         text_format=CVSections,
     )
     return response.output_parsed
+
+from prompts import JOB_FIT_PROMPT
+from schemas import JobFit
+
+POINTS = {"met": 1, "partly": 0.5, "missing": 0}
+
+def job_fit(job_description: str, cv_text: str) -> JobFit:
+    response = client.responses.parse(
+        model="gpt-6-luna",
+        instructions=JOB_FIT_PROMPT,
+        input=f"<job_description>{job_description}</job_description>\n<cv>{cv_text}</cv>",
+        text_format=JobFit,
+    )
+    return response.output_parsed
+
+def match_score(fit: JobFit) -> int:
+    """The score is counted in code, so the same answers always give the same number."""
+    if not fit.requirements:
+        return 0
+    points = sum(POINTS[r.status] for r in fit.requirements)
+    return round(points / len(fit.requirements) * 100)

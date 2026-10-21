@@ -81,3 +81,16 @@ class CVSections(BaseModel):
     skills: str
     languages: str
     other: str = Field(description="Anything that fits no other section")
+
+#Job_fit
+class Requirement(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    requirement: str = Field(description="One requirement from the job description, in a few words")
+    status: Literal["met", "partly", "missing"]
+    evidence: str = Field(description="Exact CV text that shows it; empty if missing")
+    how_to_close: str = Field(description="One concrete action to close the gap; empty if met")
+
+class JobFit(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    summary: str = Field(description="Two sentences on how well this CV fits this job")
+    requirements: list[Requirement] = Field(description="At most 10, most important first")

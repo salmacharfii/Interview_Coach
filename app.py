@@ -32,6 +32,11 @@ class CVRequest(BaseModel):
     cv_text: str
     source: Literal["paste", "pdf"] = "paste"
 
+class FitRequest(BaseModel):
+    job_description: str
+    cv_text: str
+
+
 logger = logging.getLogger("career_coach")
 
 MAX_PDF_BYTES = 4 * 1024 * 1024  # Vercel rejects request bodies over 4.5 MB
@@ -118,3 +123,13 @@ async def extract(file: UploadFile = File(...)):
         "sections": sections,
         "lost_content": kept < cv_review.non_whitespace_length(raw) * 0.8,
     }
+
+
+@app.post("/cv/fit")
+def fit(req: FitRequest):
+    if not req.job_description.strip():
+        raise HTTPException(status_code=400, detail="Add the job description on the start screen to check your fit.")
+    if len(req.cv_text) > MAX_CV_CHARS:
+        raise HTTPException(status_code=400, detail="That CV is too long. Please shorten it.")
+    result = cv_review.job_fit(req.job_description, req.cv_text)
+    return {"match_score": cv_review.match_score(result), "fit": result}
