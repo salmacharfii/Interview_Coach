@@ -74,6 +74,7 @@
   .card .pill { background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 1px 10px; font-size: .85rem; white-space: nowrap; }
   .card.not-reached { opacity: .6; }
   .pill.muted { background: var(--line); color: var(--muted); }
+  .no-answer { display: inline-block; margin: 8px 0; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
   blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid var(--line); color: var(--muted); font-style: italic; }
   .card p { margin: 8px 0 0; }
   .label { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 10px; }
@@ -547,7 +548,7 @@ async function loadFeedback() {
     const scores = fb.scores.map(s => s.asked ? `
       <div class="card">
         <div class="head"><span>${escapeHtml(s.competency)}</span><span class="pill">${s.score} / 5</span></div>
-        ${s.evidence_quote ? `<blockquote>${escapeHtml(s.evidence_quote)}</blockquote>` : ""}
+        ${hasQuote(s.evidence_quote) ? `<blockquote>${escapeHtml(s.evidence_quote)}</blockquote>` : `<span class="no-answer">No answer</span>`}
         <p>${escapeHtml(s.justification)}</p>
       </div>` : `
       <div class="card not-reached">
@@ -558,13 +559,13 @@ async function loadFeedback() {
     const strengths = fb.strengths.map(p => `
       <div class="card">
         <div class="head"><span>${escapeHtml(p.point)}</span></div>
-        ${p.quote ? `<blockquote>${escapeHtml(p.quote)}</blockquote>` : ""}
+        ${hasQuote(p.quote) ? `<blockquote>${escapeHtml(p.quote)}</blockquote>` : ""}
       </div>`).join("") || `<p class="status">No clear strengths were identified this time.</p>`;
 
     const weaknesses = fb.weaknesses.map(w => `
       <div class="card">
         <div class="head"><span>${escapeHtml(w.point)}</span></div>
-        ${w.quote ? `<blockquote>${escapeHtml(w.quote)}</blockquote>` : ""}
+        ${hasQuote(w.quote) ? `<blockquote>${escapeHtml(w.quote)}</blockquote>` : ""}
         <div class="label">How to improve</div>
         <p>${escapeHtml(w.improvement)}</p>
         ${w.better_answer_example ? `<div class="label">A stronger answer</div><p>${escapeHtml(w.better_answer_example)}</p>` : ""}
@@ -784,6 +785,11 @@ $("reviewBtn").addEventListener("click", async () => {
     setCvBusy(false);
   }
 });
+
+// Older answers put "No answer given" in the quote; never show that as if the user said it.
+function hasQuote(q) {
+  return !!q && !/^no answer( given)?\.?$/i.test(q.trim());
+}
 
 // --- CV review ---
 function findings(list) {

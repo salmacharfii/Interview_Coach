@@ -35,7 +35,7 @@ class QuestionScore(BaseModel):
     competency: str
     asked: bool = Field(description="True only if the interviewer actually asked this question")
     score: int | None = Field(description="1 to 5 against the plan's anchors; null if not asked")
-    evidence_quote: str = Field(description="The candidate's exact words")
+    evidence_quote: str = Field(description="The candidate's exact words; empty if there is no usable answer")
     justification: str
 
 class Point(BaseModel):
@@ -68,8 +68,8 @@ class CVReview(BaseModel):
     clarity: list[Finding]
     formatting: list[Finding]
     errors: list[Finding]
-    skills_present: list[str]
-    skills_missing: list[str]
+    skills_present: list[str] = Field(description="Short skill names, 1 to 4 words each")
+    skills_missing: list[str] = Field(description="Short skill names, 1 to 4 words each")
     top_improvements: list[str] = Field(description="Max 5, most impactful first")
 
 class CVSections(BaseModel):
