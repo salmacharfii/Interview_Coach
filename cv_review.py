@@ -94,3 +94,19 @@ def match_score(fit: JobFit) -> int:
         return 0
     points = sum(POINTS[r.status] for r in fit.requirements)
     return round(points / len(fit.requirements) * 100)
+
+from prompts import JUDGE_PROMPT
+from schemas import ReviewJudgement
+
+def judge_review(role: str, cv_text: str, review: CVReview) -> ReviewJudgement:
+    response = client.responses.parse(
+        model="gpt-6-luna",
+        instructions=JUDGE_PROMPT,
+        input=(
+            f"<role>{role}</role>\n"
+            f"<cv>{cv_text}</cv>\n"
+            f"<review>{review.model_dump_json()}</review>"
+        ),
+        text_format=ReviewJudgement,
+    )
+    return response.output_parsed

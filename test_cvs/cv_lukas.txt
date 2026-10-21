@@ -1,0 +1,25 @@
+Lukas Brandt
+Hamburg · lukas.brandt@example.com · lukasbrandt.design
+
+PROFILE
+Junior product designer focused on research-led mobile apps. I turn interview findings into flows that teams can ship and measure.
+
+EXPERIENCE
+UX/UI Designer (Working Student) — Fahrwerk Mobility, Hamburg (Oct 2024 - present)
+- Redesigned the bike-booking flow from 6 to 4 steps after 8 user interviews; booking completion rose from 61% to 74% in the first month
+- Built 32 Figma components with variants and documented them for 3 front-end developers
+- Ran 5 moderated usability tests on the new onboarding and reported findings to the product owner
+
+Design Intern — Kaiserkai Agency, Hamburg (Mar 2024 - Aug 2024)
+- Designed 12 landing pages for e-commerce clients in Figma, handed off with Zeplin
+- Ran an A/B test on a checkout button label that raised clicks by 9%
+
+EDUCATION
+B.A. Interaction Design — HAW Hamburg (2021 - 2025)
+Thesis: Reducing drop-off in public transport ticket apps
+
+SKILLS
+Figma (components, auto layout, prototyping), user interviews, usability testing, wireframing, design systems, basic HTML/CSS, Miro
+
+LANGUAGES
+German (native), English (C1)

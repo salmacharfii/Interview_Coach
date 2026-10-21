@@ -94,3 +94,16 @@ class JobFit(BaseModel):
     model_config = ConfigDict(extra="forbid")
     summary: str = Field(description="Two sentences on how well this CV fits this job")
     requirements: list[Requirement] = Field(description="At most 10, most important first")
+
+#Judge
+class Criterion(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    score: int = Field(description="1 to 5")
+    justification: str = Field(description="One or two sentences, with an example from the review")
+
+class ReviewJudgement(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    accuracy: Criterion = Field(description="Quotes exist in the CV; nothing invented")
+    relevance: Criterion = Field(description="Findings matter for this role")
+    actionability: Criterion = Field(description="The candidate knows exactly what to change")
+    completeness: Criterion = Field(description="All six areas covered; no obvious problem missed")
