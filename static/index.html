@@ -227,6 +227,14 @@
   .composer textarea:focus-visible { box-shadow: none; background: transparent; }
   .composer-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 4px 6px 4px 14px; }
   .kbd { font-size: var(--t-xs); color: var(--graphite); }
+    /* Voice to text: mic button next to Send */
+  .composer-foot #sendBtn { margin-left: 0; }
+  .mic { min-height: 44px; padding: 0 16px; font-size: var(--t-sm); background: transparent; color: var(--ink); border-color: var(--rule-strong); }
+  .mic:hover { background: transparent; border-color: var(--ink); }
+  .mic .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--pen); }
+  .mic.on { color: var(--pen); border-color: var(--pen); }
+  .mic.on .dot { animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { transform: scale(1.6); opacity: .5; } }
   .composer-foot button { margin-left: auto; }
   .kbd kbd { font: inherit; font-weight: 600; padding: 2px 6px; border-radius: 6px; box-shadow: var(--ring); background: var(--paper); }
 
@@ -457,7 +465,7 @@
         <div class="error hidden" id="homeError" role="alert"></div>
       </div>
     </div>
-    <p class="privacy">Practice, not prediction. What you type is sent to OpenAI to write your feedback; margin doesn't save it.</p>
+    <p class="privacy">Practice, not prediction. What you type or say is sent to OpenAI to write your feedback; margin doesn't save it. Voice input is transcribed by your browser's speech service (Google in Chrome, Apple in Safari).</p>
   </section>
 
   <!-- INTERVIEW -->
@@ -475,6 +483,7 @@
       <textarea id="answer" placeholder="Type your answer as you'd say it out loud" aria-label="Your answer"></textarea>
       <div class="composer-foot">
         <span class="kbd"><kbd>Ctrl</kbd> or <kbd>⌘</kbd> + <kbd>Enter</kbd> to send</span>
+                <button type="button" class="mic hidden" id="micBtn" aria-pressed="false"><span class="dot" aria-hidden="true"></span><span id="micLabel">Speak</span></button>
         <button id="sendBtn">Send <span class="arrow" aria-hidden="true">→</span></button>
       </div>
     </div>
@@ -836,13 +845,16 @@ function setChatBusy(busy) {
   $("sendBtn").disabled = busy;
   $("answer").disabled = busy;
   $("endBtn").disabled = busy;
+  $("micBtn").disabled = busy;
   busy ? show("chatStatus") : hide("chatStatus");
 }
 
 async function sendAnswer() {
   if (sending || interviewOver) return;
+  stopMic();
   const text = $("answer").value.trim();
   if (!text) return;
+ 
 
   setChatBusy(true);
   hide("chatError");
@@ -881,6 +893,7 @@ $("answer").addEventListener("keydown", (e) => {
 // The panel that replaces the answer box: interview finished, limit reached,
 // or the user asked to end. actions = [{ label, primary, onClick }]
 function showEndPanel(text, actions) {
+  stopMic();
   $("chatEndText").textContent = text;
   const row = $("chatEndActions");
   row.innerHTML = "";
@@ -1406,6 +1419,53 @@ $("fitBtn").addEventListener("click", async () => {
     stopNarrate("fitStatus");
     $("fitBtn").disabled = false;
   }
+});
+// --- Voice to text (the browser's own speech recognition) ---
+const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+let listening = false;
+let baseText = "";
+
+function setMic(on) {
+  listening = on;
+  $("micBtn").classList.toggle("on", on);
+  $("micBtn").setAttribute("aria-pressed", on);
+  $("micLabel").textContent = on ? "Stop" : "Speak";
+}
+
+function stopMic() {
+  if (rec && listening) rec.stop();
+}
+
+if (Speech) {
+  show("micBtn");
+  rec = new Speech();
+  rec.continuous = true;       // keep listening through short pauses
+  rec.interimResults = true;   // show words while the user is still speaking
+  rec.lang = "en-US";          // the language the user speaks
+
+  rec.onresult = (e) => {
+    let spoken = "";
+    for (let i = 0; i < e.results.length; i++) spoken += e.results[i][0].transcript;
+    $("answer").value = (baseText + " " + spoken).trim();
+  };
+  rec.onend = () => setMic(false);
+  rec.onerror = (e) => {
+    setMic(false);
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+      showError("chatError", "Microphone access is blocked. Allow it in your browser's site settings, or type your answer.");
+    } else if (e.error !== "no-speech" && e.error !== "aborted") {
+      showError("chatError", "Voice input stopped. Try again, or type your answer.");
+    }
+  };
+}
+
+$("micBtn").addEventListener("click", () => {
+  if (!rec) return;
+  if (listening) { rec.stop(); return; }
+  hide("chatError");
+  baseText = $("answer").value.trim();   // keep anything already typed
+  try { rec.start(); setMic(true); } catch (e) { /* already listening */ }
 });
 </script>
 </body>
